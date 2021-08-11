@@ -58,6 +58,9 @@ def get_ec2_details(instance_id, ec2_object, event_account_id):
         instance_description_tag = instance_description_tag_filter[0]['Value'] if instance_description_tag_filter else None
         image_description = instance_image.description
         description_tag = instance_description_tag if not image_description else image_description
+        # following determines if the instance is part of an EMR cluster. it uses a Tag and AMI Name to be sure.
+        emr_tag = list(filter(lambda m: m['Key'] == 'aws:elasticmapreduce:job-flow-id', instance_resource['tags']))
+        is_emr = True if emr_tag or instance_image.name.startswith('emr-') else False
     except Exception as e:
         logger.error(f'Error on getting instance details: {str(e)}')
         raise e
@@ -69,6 +72,7 @@ def get_ec2_details(instance_id, ec2_object, event_account_id):
         address = None
 
     if not description_tag:
+        # `description` tag is not available on AMI or instance
         raise Exception("Determining OS type failed")
 
     details = dict()
@@ -77,6 +81,7 @@ def get_ec2_details(instance_id, ec2_object, event_account_id):
     details['platform'] = instance_resource.platform
     details['image_description'] = description_tag
     details['aws_account_id'] = event_account_id
+    details['is_emr'] = is_emr
     return details
 
 

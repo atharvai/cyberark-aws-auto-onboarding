@@ -9,6 +9,7 @@ DEBUG_LEVEL_DEBUG = 'debug' # Outputs all information
 UNIX_PLATFORM = "UnixSSHKeys"
 WINDOWS_PLATFORM = "WinServerLocal"
 ADMINISTRATOR = "Administrator"
+EMR_USERNAME = 'hadoop'
 pvwa_integration_class = PvwaIntegration()
 logger = LogMechanism()
 
@@ -103,7 +104,9 @@ def create_instance(instance_id, instance_details, store_parameters_class, log_n
         aws_account_name = f'AWS.{instance_id}.Unix'
         platform = UNIX_PLATFORM
         safe_name = store_parameters_class.unix_safe_name
-        instance_username = get_os_distribution_user(instance_details['image_description'])
+        # if EMR instance, use a fixed username, otherwise derive based on platform and OS
+        instance_username = get_os_distribution_user(instance_details['image_description']) \
+            if not instance_details['is_emr'] else EMR_USERNAME
 
     # Check if account already exist - in case exist - just add it to DynamoDB
     print('pvwa_connection_number')
