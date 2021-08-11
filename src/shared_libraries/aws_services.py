@@ -53,7 +53,11 @@ def get_ec2_details(instance_id, ec2_object, event_account_id):
         instance_resource = ec2_object.Instance(instance_id)
         instance_image = ec2_object.Image(instance_resource.image_id)
         logger.info(f'Image Detected: {str(instance_image)}')
+        # following filter assumes instance is also tagged with same `description` tag.
+        instance_description_tag_filter = list(filter(lambda m: m['Key']=='description',instance_resource['tags']))
+        instance_description_tag = instance_description_tag_filter[0]['Value'] if instance_description_tag_filter else None
         image_description = instance_image.description
+        description_tag = instance_description_tag if not image_description else image_description
     except Exception as e:
         logger.error(f'Error on getting instance details: {str(e)}')
         raise e
@@ -64,14 +68,14 @@ def get_ec2_details(instance_id, ec2_object, event_account_id):
     else:  # unable to retrieve address from aws
         address = None
 
-    if not image_description:
+    if not description_tag:
         raise Exception("Determining OS type failed")
 
     details = dict()
     details['key_name'] = instance_resource.key_name
     details['address'] = address
     details['platform'] = instance_resource.platform
-    details['image_description'] = image_description
+    details['image_description'] = description_tag
     details['aws_account_id'] = event_account_id
     return details
 
